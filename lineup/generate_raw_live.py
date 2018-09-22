@@ -430,12 +430,15 @@ def process_game(args):
             
             # snapshot stats
             cols = ["Game_id", "Event_Num", "Period", "PC_Time", "WC_Time"]
+            active_cols = ["Active{}".format(i) for i in range(10)]
+            active_players = list(itertools.chain(*prev_active.values()))
             teams_df = teams_df.assign(**{k: event[k] for k in cols})
+            teams_df = teams_df.assign(**{c: p for p, c in zip(active_players, active_cols)})
             players_df = players_df.assign(**{k: event[k] for k in cols})
+            players_df = players_df.assign(**{c: p for p, c in zip(active_players, active_cols)})
             team_df_list.append(teams_df.reset_index())
             player_df_list.append(players_df.reset_index())
 
-    # except (Exception, Warning) as e:
     except (Exception, Warning) as e:
         print(
             "Game_id ({}): {}".format(
@@ -484,6 +487,8 @@ def generate_raw_live_box_scores():
     print("Finished loading datasets...")
 
     game_ids = pd.unique(pbp_df["Game_id"])
+    game_ids = [g for g in game_ids if (g in range(41700000, 41800000))
+                                        or (g in range(21700000, 21800000))]
     game_len = len(game_ids)
 
     print("Cleaning play by play dataset...")
@@ -506,8 +511,8 @@ def generate_raw_live_box_scores():
         pass # wipe file
     with Pool() as pool:
         for gt_df, gp_df in tqdm(pool.imap_unordered(process_game, process_args), total=len(process_args)):
-            gt_df.to_hdf('../data/output/LiveTeamBoxScores.h5', 'gt_df', format='table', append=True)
-            gp_df.to_hdf('../data/output/LivePlayerBoxScores.h5', 'gt_df', format='table', append=True)
+            gt_df.to_hdf('../data/output/LiveTeamBoxScores161718.h5', 'gt_df', format='table', append=True)
+            gp_df.to_hdf('../data/output/LivePlayerBoxScores161718.h5', 'gt_df', format='table', append=True)
 
     print("Processed {} games in {}s".format(game_len, time.time() - start3))
 
